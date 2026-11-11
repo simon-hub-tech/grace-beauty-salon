@@ -1,0 +1,5 @@
+# Email credentials
+config/email.php
+
+# Environment variables
+.env
