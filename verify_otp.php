@@ -1,5 +1,8 @@
 
 <?php
+// Use UTC consistently for OTP expiry calculations
+date_default_timezone_set('UTC');
+
 require_once __DIR__ . '/config/database.php';
 
 $message = "";
@@ -65,7 +68,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             } else {
 
-                // Verify account only if OTP is still valid
+                // Complete verification using the PHP expiry check above.
+                // Do not use MySQL NOW() here.
                 $update = $conn->prepare("
                     UPDATE users
                     SET
@@ -75,7 +79,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     WHERE id = ?
                     AND is_verified = 0
                     AND otp_code = ?
-                    AND otp_expires_at >= NOW()
                 ");
 
                 $update->execute([
@@ -90,7 +93,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                 } else {
 
-                    $message = "OTP verification failed or the code has expired. Please try again.";
+                    $message = "OTP verification failed. Please try again.";
                     $messageType = "error";
                 }
             }
@@ -108,17 +111,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Email Verification | Grace Beauty Salon</title>
-
     <script src="https://cdn.tailwindcss.com"></script>
-
 </head>
 
 <body class="bg-pink-50 min-h-screen flex items-center justify-center p-4">
@@ -126,7 +123,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <div class="bg-white w-full max-w-md rounded-2xl shadow-lg p-8">
 
         <div class="text-center mb-6">
-
             <h1 class="text-3xl font-bold text-pink-600">
                 Grace Beauty Salon
             </h1>
@@ -138,30 +134,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <p class="text-gray-500 mt-2">
                 Enter the six-digit code sent to your email.
             </p>
-
         </div>
 
         <?php if ($message !== ""): ?>
-
             <div class="mb-4 p-3 rounded-lg
                 <?= $messageType === 'success'
                     ? 'bg-green-100 text-green-700'
                     : 'bg-red-100 text-red-700' ?>">
 
-                <?= htmlspecialchars(
-                    $message,
-                    ENT_QUOTES,
-                    'UTF-8'
-                ) ?>
-
+                <?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?>
             </div>
-
         <?php endif; ?>
 
         <form method="POST" action="verify_otp.php" class="space-y-4">
 
             <div>
-
                 <label class="block text-gray-700 font-medium mb-1">
                     Email Address
                 </label>
@@ -169,20 +156,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <input
                     type="email"
                     name="email"
-                    value="<?= htmlspecialchars(
-                        $email,
-                        ENT_QUOTES,
-                        'UTF-8'
-                    ) ?>"
+                    value="<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>"
                     required
                     readonly
-                    class="w-full border rounded-lg p-3 bg-gray-50"
-                >
-
+                    class="w-full border rounded-lg p-3 bg-gray-50">
             </div>
 
             <div>
-
                 <label class="block text-gray-700 font-medium mb-1">
                     Six-Digit OTP
                 </label>
@@ -195,35 +175,26 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     pattern="[0-9]{6}"
                     inputmode="numeric"
                     placeholder="Enter your OTP"
-                    class="w-full border rounded-lg p-3 text-center tracking-widest text-xl focus:ring-2 focus:ring-pink-400 outline-none"
-                >
-
+                    class="w-full border rounded-lg p-3 text-center tracking-widest text-xl focus:ring-2 focus:ring-pink-400 outline-none">
             </div>
 
             <button
                 type="submit"
                 class="w-full bg-pink-600 hover:bg-pink-700 text-white font-semibold p-3 rounded-lg">
-
                 Verify Email
-
             </button>
 
         </form>
 
         <?php if ($messageType === 'success'): ?>
-
             <a
                 href="login.php"
                 class="block text-center mt-5 bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg">
-
                 Proceed to Login
-
             </a>
-
         <?php endif; ?>
 
     </div>
 
 </body>
-
 </html>

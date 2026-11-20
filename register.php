@@ -1,5 +1,9 @@
 
 <?php
+
+// Use UTC timezone for consistent OTP expiration
+date_default_timezone_set('UTC');
+
 require_once __DIR__ . '/config/database.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
@@ -55,8 +59,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 // Generate six-digit OTP
                 $otp = (string) random_int(100000, 999999);
 
-                // OTP expires after 10 minutes
-                $otp_expiry = date(
+                // OTP expires after 10 minutes (UTC)
+                $otp_expiry = gmdate(
                     "Y-m-d H:i:s",
                     time() + 600
                 );
